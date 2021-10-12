@@ -7,6 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type serverVersionCmd struct {
@@ -46,4 +48,27 @@ func (sv *serverVersionCmd) run() error {
 		return err
 	}
 	return nil
+}
+
+func getServerVersion() (string, error) {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+
+	config, err := kubeConfig.ClientConfig()
+	if err != nil {
+		return "", err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	sv, err := clientset.Discovery().ServerVersion()
+	if err != nil {
+		return "", err
+	}
+
+	return sv.String(), nil
 }
